@@ -55,8 +55,8 @@
      print('user_id:' + user_id)
      line_bot_api.reply_message(
          event.reply_token,
-         TextSendMessage(text=user_id + event.message.text)
-         #TextSendMessage(text="Gary:" + event.message.text)
+         #TextSendMessage(text=user_id + event.message.text)
+         TextSendMessage(text="Gary:" + event.message.text)
      )
  
  
