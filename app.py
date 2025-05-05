@@ -11,7 +11,7 @@ load_dotenv()  # 如果你用 .env 檔
 app = Flask(__name__)
 
 # 讀取你的 LINE Bot 金鑰
-CHANNEL_ACCESS_TOKEN = os.getenv("LINE_ACCESS_TOKEN")
+CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 
 line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
