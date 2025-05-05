@@ -1,49 +1,71 @@
-from flask import Flask, request, abort
-from linebot import LineBotApi, WebhookHandler
-from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
-
-import os
-from dotenv import load_dotenv
-
-load_dotenv()  # 如果你用 .env 檔
-
-app = Flask(__name__)
-
-# 讀取你的 LINE Bot 金鑰
-CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
-CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
-
-line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
-handler = WebhookHandler(CHANNEL_SECRET)
-
-@app.route("/callback", methods=["POST"])
-def callback():
-    # 取得 LINE 傳來的 headers 與 body
-    signature = request.headers["X-Line-Signature"]
-    body = request.get_data(as_text=True)
-
-    try:
-        handler.handle(body, signature)
-    except InvalidSignatureError:
-        abort(400)
-
-    return "OK"
-
-# 處理訊息事件
-@handler.add(MessageEvent, message=TextMessage)
-def handle_message(event):
-    user_id = event.source.user_id  # 這就是我們要的使用者 ID
-    user_message = event.message.text
-
-    print("使用者 ID:", user_id)
-    print("訊息內容:", user_message)
-
-    reply_text = f"你的 User ID 是：\n{user_id}"
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=reply_text)
-    )
-
-if __name__ == "__main__":
-    app.run(port=5000)
+# https://github.com/line/line-bot-sdk-python/blob/master/examples/flask-echo/app_with_handler.py
+ 
+ import os
+ import sys
+ from argparse import ArgumentParser
+ 
+ from flask import Flask, request, abort
+ from linebot import (
+     LineBotApi, WebhookHandler
+ )
+ from linebot.exceptions import (
+     InvalidSignatureError
+ )
+ from linebot.models import (
+     MessageEvent, TextMessage, TextSendMessage,
+ )
+ 
+ app = Flask(__name__)
+ 
+ # get channel_secret and channel_access_token from your environment variable
+ channel_secret = os.getenv('LINE_CHANNEL_SECRET', None)
+ channel_access_token = os.getenv('LINE_CHANNEL_ACCESS_TOKEN', None)
+ if channel_secret is None:
+     print('Specify LINE_CHANNEL_SECRET as environment variable.')
+     sys.exit(1)
+ if channel_access_token is None:
+     print('Specify LINE_CHANNEL_ACCESS_TOKEN as environment variable.')
+     sys.exit(1)
+ 
+ line_bot_api = LineBotApi(channel_access_token)
+ handler = WebhookHandler(channel_secret)
+ 
+ 
+ @app.route("/callback", methods=['POST'])
+ def callback():
+     # get X-Line-Signature header value
+     signature = request.headers['X-Line-Signature']
+ 
+     # get request body as text
+     body = request.get_data(as_text=True)
+     app.logger.info("Request body: " + body)
+ 
+     # handle webhook body
+     try:
+         handler.handle(body, signature)
+     except InvalidSignatureError:
+         abort(400)
+ 
+     return 'OK'
+ 
+ 
+ @handler.add(MessageEvent, message=TextMessage)
+ def message_text(event):
+     user_id = event.source.user_id
+     print('user_id:' + user_id)
+     line_bot_api.reply_message(
+         event.reply_token,
+         TextSendMessage(text=user_id + event.message.text)
+         #TextSendMessage(text="Gary:" + event.message.text)
+     )
+ 
+ 
+ if __name__ == "__main__":
+     arg_parser = ArgumentParser(
+         usage='Usage: python ' + __file__ + ' [--port <port>] [--help]'
+     )
+     arg_parser.add_argument('-p', '--port', default=8000, help='port')
+     arg_parser.add_argument('-d', '--debug', default=False, help='debug')
+     options = arg_parser.parse_args()
+ 
+     app.run(debug=options.debug, port=options.port)
